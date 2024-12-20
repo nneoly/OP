@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <regex>
+#include <algorithm>
 using namespace std;
 
 struct FileInfo {
@@ -16,6 +17,9 @@ vector<string> extractData(const string& data, const string& regex);
 string getFileName(const string& s);
 string getFileDate(const string& s);
 double getFileRadius(const string& s);
+void sortFilesByDate(vector<FileInfo>& files);
+void filterByRadius(const vector<FileInfo>& files, double minRadius, double maxRadius);
+string convertDateToSortableFormat(const string& date);
 
 int main() {
     ifstream ist("file.txt");
@@ -35,12 +39,59 @@ int main() {
         }
     }
 
-    cout << "File data:\n";
+    cout << "File data (unsorted):\n";
     for (const auto& item : files) {
         cout << item.date << " | " << item.name << " | " << item.radius << " kilometers\n";
     }
 
+    try {
+        sortFilesByDate(files);
+    }
+    catch (const runtime_error& e) {
+        cerr << "Error during date sorting: " << e.what() << "\n";
+        return 1;
+    }
+
+
+    cout << "\nFile data (sorted by date):\n";
+    for (const auto& item : files) {
+        cout << item.date << " | " << item.name << " | " << item.radius << " kilometers\n";
+    }
+
+    double minRadius, maxRadius;
+    cout << "\nEnter radius range (min max): ";
+    cin >> minRadius >> maxRadius;
+    filterByRadius(files, minRadius, maxRadius);
+
     return 0;
+}
+
+void sortFilesByDate(vector<FileInfo>& files) {
+    sort(files.begin(), files.end(), [](const FileInfo& a, const FileInfo& b) {
+        string dateA = convertDateToSortableFormat(a.date);
+        string dateB = convertDateToSortableFormat(b.date);
+        if (dateA.empty() || dateB.empty()) {
+            throw runtime_error("Invalid date format encountered.");
+        }
+        return dateA < dateB;
+        });
+}
+
+string convertDateToSortableFormat(const string& date) {
+    if (date.size() != 10 || date[2] != '.' || date[5] != '.') {
+        cerr << "Invalid date format: " << date << "\n";
+        return "";
+    }
+    return date.substr(6, 4) + date.substr(3, 2) + date.substr(0, 2);
+}
+
+void filterByRadius(const vector<FileInfo>& files, double minRadius, double maxRadius) {
+    cout << "\nPlanets within radius range (" << minRadius << " - " << maxRadius << " kilometers):\n";
+    for (const auto& file : files) {
+        if (file.radius >= minRadius && file.radius <= maxRadius) {
+            cout << file.name << " | " << file.radius << " kilometers\n";
+        }
+    }
 }
 
 string getFileName(const string& s) {
@@ -78,6 +129,5 @@ vector<string> extractData(const string& data, const string& regex) {
 }
 
 std::ostream& operator<<(std::ostream& stream, const FileInfo& fileInfo) {
-    return stream << fileInfo.date << " | " << fileInfo.name << " | " << fileInfo.radius << " kilometers";
+    return stream << fileInfo.date << ", " << fileInfo.name << ", " << fileInfo.radius << " kilometers";
 }
-
