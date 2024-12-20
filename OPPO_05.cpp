@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <clocale>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -94,6 +95,24 @@ void filterByRadius(const vector<FileInfo>& files, double minRadius, double maxR
     }
 }
 
+bool compareByDate(const FileInfo& a, const FileInfo& b) {
+    return convertDateToSortableFormat(a.date) < convertDateToSortableFormat(b.date);
+}
+
+string convertDateToSortableFormat(const string& date) {
+    return date.substr(6, 4) + date.substr(3, 2) + date.substr(0, 2);
+}
+
+vector<FileInfo> filterByRadius(const vector<FileInfo>& files, double minRadius, double maxRadius) {
+    vector<FileInfo> result;
+    for (const auto& file : files) {
+        if (file.radius >= minRadius && file.radius <= maxRadius) {
+            result.push_back(file);
+        }
+    }
+    return result;
+}
+
 string getFileName(const string& s) {
     auto names = extractData(s, R"("[^"]*")");
     if (names.empty()) {
@@ -111,7 +130,7 @@ string getFileDate(const string& s) {
 }
 
 double getFileRadius(const string& s) {
-    auto radii = extractData(s, R"(\b\d+\.\d+\b)");
+    auto radii = extractData(s, R"(\b\d+\.\d+|\d+\b)");
     if (radii.empty()) {
         throw runtime_error("Radius not found");
     }
